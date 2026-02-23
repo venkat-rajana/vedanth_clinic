@@ -15,6 +15,7 @@ import VideoCall from "./pages/VideoCall";
 import MedicalRecords from "./pages/MedicalRecords";
 import Invoices from "./pages/Invoices";
 import UserManagement from "./pages/UserManagement";
+import Patients from "./pages/Patients";
 import Unauthorized from "./pages/Unauthorized";
 import NotFound from "./pages/NotFound";
 
@@ -84,10 +85,10 @@ function AppRouter() {
         </ProtectedRoute>
       } />
       
-      {/* Staff routes */}
+      {/* Staff and Doctor routes */}
       <Route path="/patients" element={
         <ProtectedRoute allowedRoles={['staff', 'doctor', 'admin']}>
-          <Dashboard />
+          <Patients />
         </ProtectedRoute>
       } />
       
