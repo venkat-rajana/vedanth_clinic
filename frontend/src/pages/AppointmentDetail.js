@@ -115,18 +115,12 @@ export default function AppointmentDetail() {
 
   return (
     <DashboardLayout>
-      <Header title="Appointment Details" />
+      <Header 
+        title="Appointment Details" 
+        showBack={true}
+        backPath="/appointments"
+      />
       <div className="p-6" data-testid="appointment-detail-page">
-        {/* Back button */}
-        <Button 
-          variant="ghost" 
-          className="mb-6"
-          onClick={() => navigate('/appointments')}
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Appointments
-        </Button>
-
         <div className="grid lg:grid-cols-3 gap-6">
           {/* Main Info */}
           <div className="lg:col-span-2 space-y-6">
