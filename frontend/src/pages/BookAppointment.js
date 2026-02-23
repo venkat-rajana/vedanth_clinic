@@ -294,8 +294,8 @@ export default function BookAppointment() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Patient Selection (Staff only) */}
-              {user?.role === 'staff' && (
+              {/* Patient Selection (Staff and Admin) */}
+              {(user?.role === 'staff' || user?.role === 'admin') && (
                 <div>
                   <Label>Patient</Label>
                   <Select
