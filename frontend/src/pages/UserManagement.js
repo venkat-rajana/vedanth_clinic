@@ -507,6 +507,72 @@ export default function UserManagement() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Edit User Dialog */}
+        <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit User Details</DialogTitle>
+              <DialogDescription>
+                Update user information.
+              </DialogDescription>
+            </DialogHeader>
+            {editingUser && (
+              <div className="space-y-4 py-4">
+                <div>
+                  <Label>Full Name</Label>
+                  <Input
+                    value={editingUser.name}
+                    onChange={(e) => setEditingUser({ ...editingUser, name: e.target.value })}
+                    data-testid="edit-user-name"
+                  />
+                </div>
+                <div>
+                  <Label>Phone</Label>
+                  <Input
+                    value={editingUser.phone}
+                    onChange={(e) => setEditingUser({ ...editingUser, phone: e.target.value })}
+                    placeholder="+91 98765 43210"
+                    data-testid="edit-user-phone"
+                  />
+                </div>
+                {editingUser.role === 'doctor' && (
+                  <div>
+                    <Label>Specialization</Label>
+                    <Input
+                      value={editingUser.specialization}
+                      onChange={(e) => setEditingUser({ ...editingUser, specialization: e.target.value })}
+                      data-testid="edit-user-specialization"
+                    />
+                  </div>
+                )}
+                <div>
+                  <Label>Address</Label>
+                  <Input
+                    value={editingUser.address}
+                    onChange={(e) => setEditingUser({ ...editingUser, address: e.target.value })}
+                    placeholder="123 MG Road, Bangalore"
+                    data-testid="edit-user-address"
+                  />
+                </div>
+              </div>
+            )}
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowEditDialog(false)}>
+                Cancel
+              </Button>
+              <Button 
+                className="bg-teal-700 hover:bg-teal-800"
+                onClick={handleSaveEdit}
+                disabled={saving}
+                data-testid="confirm-edit-user"
+              >
+                {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                Save Changes
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   );
