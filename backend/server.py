@@ -311,15 +311,19 @@ async def logout(request: Request, response: Response):
 # ============ USER ROUTES ============
 @api_router.get("/users")
 async def get_users(request: Request, role: Optional[str] = None):
-    """Get all users (admin only) or filtered by role"""
+    """Get all users (admin/staff) or filtered by role. Doctors can view patients."""
     current_user = await get_current_user(request)
     
-    if current_user["role"] not in ["admin", "staff"]:
+    if current_user["role"] not in ["admin", "staff", "doctor"]:
         raise HTTPException(status_code=403, detail="Not authorized")
     
     query = {"is_active": True}
     if role:
         query["role"] = role
+    
+    # Doctors can only see patients
+    if current_user["role"] == "doctor":
+        query["role"] = "patient"
     
     users = await db.users.find(query, {"_id": 0}).to_list(1000)
     return users
