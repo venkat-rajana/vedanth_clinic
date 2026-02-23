@@ -118,6 +118,7 @@ export const AuthProvider = ({ children }) => {
     login,
     logout,
     checkAuth,
+    refreshUser: checkAuth,
     exchangeSession,
     updateActivity,
     isAuthenticated: !!user
