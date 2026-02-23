@@ -1,34 +1,200 @@
-.App-logo {
-    height: 40vmin;
-    pointer-events: none;
+/* Vedanth Clinic App Styles */
+
+/* Layout helpers */
+.sidebar-layout {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    min-height: 100vh;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-    .App-logo {
-        animation: App-logo-spin infinite 20s linear;
+@media (max-width: 768px) {
+    .sidebar-layout {
+        grid-template-columns: 1fr;
     }
 }
 
-.App-header {
-    background-color: #0f0f10;
-    min-height: 100vh;
+/* Dashboard grid layouts */
+.dashboard-grid-admin {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 1rem;
+}
+
+.dashboard-grid-doctor {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 1rem;
+}
+
+.dashboard-grid-patient {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+}
+
+@media (max-width: 1024px) {
+    .dashboard-grid-admin,
+    .dashboard-grid-doctor {
+        grid-template-columns: 1fr;
+    }
+    
+    .dashboard-grid-patient {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Weekly calendar grid */
+.weekly-calendar {
+    display: grid;
+    grid-template-columns: 60px repeat(7, 1fr);
+}
+
+.weekly-calendar-day-view {
+    grid-template-columns: 60px 1fr;
+}
+
+/* Appointment block styles */
+.appointment-block {
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: transform 0.1s ease, box-shadow 0.2s ease;
+}
+
+.appointment-block:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.appointment-scheduled {
+    background-color: hsl(210 40% 96%);
+    border-left: 3px solid hsl(215 16% 47%);
+}
+
+.appointment-checked-in {
+    background-color: hsl(38 92% 95%);
+    border-left: 3px solid hsl(38 92% 50%);
+}
+
+.appointment-in-progress {
+    background-color: hsl(173 58% 95%);
+    border-left: 3px solid hsl(173 58% 26%);
+}
+
+.appointment-completed {
+    background-color: hsl(160 84% 95%);
+    border-left: 3px solid hsl(160 84% 39%);
+}
+
+.appointment-cancelled {
+    background-color: hsl(0 84% 97%);
+    border-left: 3px solid hsl(0 84% 60%);
+    opacity: 0.6;
+}
+
+/* Slot picker grid */
+.slot-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+}
+
+@media (max-width: 640px) {
+    .slot-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Join banner animation */
+@keyframes slide-down {
+    from {
+        transform: translateY(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.join-banner {
+    animation: slide-down 0.3s ease-out;
+}
+
+/* Status badge styles */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 9999px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+/* Card hover effects */
+.card-hover {
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.card-hover:hover {
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 10px 10px -5px rgba(0, 0, 0, 0.03);
+}
+
+/* Button active state */
+.btn-active {
+    transform: scale(0.95);
+}
+
+/* Empty state styles */
+.empty-state {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    font-size: calc(10px + 2vmin);
-    color: white;
+    padding: 3rem;
+    text-align: center;
 }
 
-.App-link {
-    color: #61dafb;
-}
-
-@keyframes App-logo-spin {
-    from {
-        transform: rotate(0deg);
+/* Loading skeleton pulse */
+@keyframes skeleton-pulse {
+    0%, 100% {
+        opacity: 1;
     }
-    to {
-        transform: rotate(360deg);
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.skeleton-pulse {
+    animation: skeleton-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Modal overlay */
+.modal-overlay {
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+}
+
+/* Video call placeholder */
+.video-placeholder {
+    background: linear-gradient(135deg, hsl(222 47% 11%) 0%, hsl(215 28% 17%) 100%);
+    border-radius: 12px;
+}
+
+/* Print styles for invoices */
+@media print {
+    .no-print {
+        display: none !important;
+    }
+    
+    .print-only {
+        display: block !important;
+    }
+    
+    body {
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
     }
 }
