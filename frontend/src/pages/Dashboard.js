@@ -161,83 +161,99 @@ const DoctorDashboard = ({ stats, appointments, loading, user }) => {
     apt => apt.date === new Date().toISOString().split('T')[0]
   );
 
+  const statCards = [
+    { label: "Today's Appointments", value: stats?.today_appointments || 0, icon: Calendar, color: 'text-teal-600', bg: 'bg-teal-50', link: '/schedule' },
+    { label: 'My Patients', value: stats?.total_patients || 0, icon: Users, color: 'text-blue-600', bg: 'bg-blue-50', link: '/patients' },
+    { label: 'Total Appointments', value: stats?.total_appointments || 0, icon: TrendingUp, color: 'text-amber-600', bg: 'bg-amber-50', link: '/appointments' },
+  ];
+
   return (
     <div className="space-y-6">
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {statCards.map((stat, index) => (
+          <Link to={stat.link} key={index}>
+            <Card className="hover:shadow-md transition-shadow cursor-pointer" data-testid={`doctor-stat-${index}`}>
+              <CardContent className="p-6">
+                {loading ? (
+                  <Skeleton className="h-20 w-full" />
+                ) : (
+                  <div className="flex items-center gap-4">
+                    <div className={`w-12 h-12 rounded-lg ${stat.bg} flex items-center justify-center`}>
+                      <stat.icon className={`h-6 w-6 ${stat.color}`} />
+                    </div>
+                    <div>
+                      <p className="text-3xl font-bold text-slate-900 tabular-nums">{stat.value}</p>
+                      <p className="text-sm text-slate-500">{stat.label}</p>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </Link>
+        ))}
+      </div>
+
+      {/* Quick Actions & Today's Schedule */}
+      <div className="grid md:grid-cols-2 gap-6">
         <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-lg bg-teal-50 flex items-center justify-center">
-                <Calendar className="h-6 w-6 text-teal-600" />
-              </div>
-              <div>
-                <p className="text-3xl font-bold text-slate-900 tabular-nums">
-                  {loading ? <Skeleton className="h-8 w-16" /> : stats?.today_appointments || 0}
-                </p>
-                <p className="text-sm text-slate-500">Today's Appointments</p>
-              </div>
-            </div>
+          <CardHeader>
+            <CardTitle className="text-lg">Quick Actions</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Link to="/schedule">
+              <Button variant="outline" className="w-full justify-between" data-testid="view-schedule-btn">
+                View Weekly Schedule
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </Link>
+            <Link to="/appointments">
+              <Button variant="outline" className="w-full justify-between" data-testid="my-appointments-btn">
+                My Appointments
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </Link>
+            <Link to="/patients">
+              <Button variant="outline" className="w-full justify-between" data-testid="my-patients-btn">
+                My Patients
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </Link>
+            <Link to="/medical-records">
+              <Button variant="outline" className="w-full justify-between" data-testid="medical-records-btn">
+                Medical Records
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </Link>
           </CardContent>
         </Card>
+
         <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-lg bg-blue-50 flex items-center justify-center">
-                <Users className="h-6 w-6 text-blue-600" />
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-lg">Today's Schedule</CardTitle>
+            <Link to="/schedule">
+              <Button variant="ghost" size="sm" className="text-teal-700">
+                Calendar <ArrowRight className="h-4 w-4 ml-1" />
+              </Button>
+            </Link>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map(i => <Skeleton key={i} className="h-16 w-full" />)}
               </div>
-              <div>
-                <p className="text-3xl font-bold text-slate-900 tabular-nums">
-                  {loading ? <Skeleton className="h-8 w-16" /> : stats?.total_patients || 0}
-                </p>
-                <p className="text-sm text-slate-500">My Patients</p>
+            ) : todayAppointments.length > 0 ? (
+              <div className="space-y-3">
+                {todayAppointments.map(apt => (
+                  <AppointmentCard key={apt.appointment_id} appointment={apt} />
+                ))}
               </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-lg bg-amber-50 flex items-center justify-center">
-                <TrendingUp className="h-6 w-6 text-amber-600" />
-              </div>
-              <div>
-                <p className="text-3xl font-bold text-slate-900 tabular-nums">
-                  {loading ? <Skeleton className="h-8 w-16" /> : stats?.total_appointments || 0}
-                </p>
-                <p className="text-sm text-slate-500">Total Appointments</p>
-              </div>
-            </div>
+            ) : (
+              <EmptyState message="No appointments scheduled for today" />
+            )}
           </CardContent>
         </Card>
       </div>
-
-      {/* Today's Schedule */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-lg">Today's Schedule</CardTitle>
-          <Link to="/appointments">
-            <Button variant="ghost" size="sm" className="text-teal-700">
-              View All <ArrowRight className="h-4 w-4 ml-1" />
-            </Button>
-          </Link>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="space-y-3">
-              {[1, 2, 3].map(i => <Skeleton key={i} className="h-16 w-full" />)}
-            </div>
-          ) : todayAppointments.length > 0 ? (
-            <div className="space-y-3">
-              {todayAppointments.map(apt => (
-                <AppointmentCard key={apt.appointment_id} appointment={apt} />
-              ))}
-            </div>
-          ) : (
-            <EmptyState message="No appointments scheduled for today" />
-          )}
-        </CardContent>
-      </Card>
     </div>
   );
 };
@@ -248,55 +264,37 @@ const StaffDashboard = ({ stats, appointments, loading }) => {
     apt => apt.date === new Date().toISOString().split('T')[0]
   );
 
+  const statCards = [
+    { label: "Today's Appointments", value: stats?.today_appointments || 0, icon: Calendar, color: 'text-teal-600', bg: 'bg-teal-50', link: '/schedule' },
+    { label: 'Pending Check-ins', value: stats?.pending_checkins || 0, icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50', link: '/appointments' },
+    { label: 'Pending Invoices', value: stats?.pending_invoices || 0, icon: Receipt, color: 'text-red-600', bg: 'bg-red-50', link: '/invoices' },
+  ];
+
   return (
     <div className="space-y-6">
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-lg bg-teal-50 flex items-center justify-center">
-                <Calendar className="h-6 w-6 text-teal-600" />
-              </div>
-              <div>
-                <p className="text-3xl font-bold text-slate-900 tabular-nums">
-                  {loading ? <Skeleton className="h-8 w-16" /> : stats?.today_appointments || 0}
-                </p>
-                <p className="text-sm text-slate-500">Today's Appointments</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-lg bg-amber-50 flex items-center justify-center">
-                <Clock className="h-6 w-6 text-amber-600" />
-              </div>
-              <div>
-                <p className="text-3xl font-bold text-slate-900 tabular-nums">
-                  {loading ? <Skeleton className="h-8 w-16" /> : stats?.pending_checkins || 0}
-                </p>
-                <p className="text-sm text-slate-500">Pending Check-ins</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-lg bg-red-50 flex items-center justify-center">
-                <Receipt className="h-6 w-6 text-red-600" />
-              </div>
-              <div>
-                <p className="text-3xl font-bold text-slate-900 tabular-nums">
-                  {loading ? <Skeleton className="h-8 w-16" /> : stats?.pending_invoices || 0}
-                </p>
-                <p className="text-sm text-slate-500">Pending Invoices</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {statCards.map((stat, index) => (
+          <Link to={stat.link} key={index}>
+            <Card className="hover:shadow-md transition-shadow cursor-pointer" data-testid={`staff-stat-${index}`}>
+              <CardContent className="p-6">
+                {loading ? (
+                  <Skeleton className="h-20 w-full" />
+                ) : (
+                  <div className="flex items-center gap-4">
+                    <div className={`w-12 h-12 rounded-lg ${stat.bg} flex items-center justify-center`}>
+                      <stat.icon className={`h-6 w-6 ${stat.color}`} />
+                    </div>
+                    <div>
+                      <p className="text-3xl font-bold text-slate-900 tabular-nums">{stat.value}</p>
+                      <p className="text-sm text-slate-500">{stat.label}</p>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </Link>
+        ))}
       </div>
 
       {/* Quick Actions & Today's Appointments */}
@@ -312,9 +310,21 @@ const StaffDashboard = ({ stats, appointments, loading }) => {
                 Book New Appointment
               </Button>
             </Link>
+            <Link to="/schedule">
+              <Button variant="outline" className="w-full justify-between" data-testid="view-schedule-btn">
+                View Weekly Schedule
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </Link>
             <Link to="/appointments">
               <Button variant="outline" className="w-full justify-between" data-testid="todays-schedule-btn">
                 Today's Schedule
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </Link>
+            <Link to="/patients">
+              <Button variant="outline" className="w-full justify-between" data-testid="patients-btn">
+                Patients
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
