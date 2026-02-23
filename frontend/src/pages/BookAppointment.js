@@ -318,6 +318,14 @@ export default function BookAppointment() {
                   </Select>
                 </div>
               )}
+              
+              {/* Show patient info for non-staff users */}
+              {user?.role === 'patient' && selectedPatient && (
+                <div className="p-3 bg-slate-50 rounded-lg">
+                  <Label className="text-xs text-slate-500">Booking for</Label>
+                  <p className="font-medium text-slate-900">{selectedPatient.name}</p>
+                </div>
+              )}
 
               {/* Appointment Type */}
               <div>
