@@ -128,6 +128,12 @@ const AdminDashboard = ({ stats, appointments, loading }) => {
             <CardTitle className="text-lg">Quick Actions</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
+            <Link to="/schedule">
+              <Button variant="outline" className="w-full justify-between" data-testid="view-schedule-btn">
+                View Weekly Schedule
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </Link>
             <Link to="/users">
               <Button variant="outline" className="w-full justify-between" data-testid="manage-users-btn">
                 Manage Users
