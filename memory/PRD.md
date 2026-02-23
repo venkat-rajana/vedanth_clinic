@@ -106,6 +106,9 @@ A production-ready, full-stack clinic management application with role-based acc
 - [x] Clickable dashboard stat cards for all roles (admin, doctor, staff)
 - [x] Quick Actions sections on all dashboards with navigation links
 - [x] Schedule link in sidebar for admin, doctor, and staff
+- [x] Settings link in sidebar for all roles (admin, doctor, staff, patient)
+- [x] All sidebar navigation items functional for all roles
+- [x] Real Settings/Profile page (name, phone, address, specialization for doctors)
 
 ## API Endpoints
 
