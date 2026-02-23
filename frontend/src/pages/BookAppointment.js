@@ -64,6 +64,13 @@ export default function BookAppointment() {
   // Confirmation dialog
   const [showConfirm, setShowConfirm] = useState(false);
 
+  // Auto-select patient for patient users
+  useEffect(() => {
+    if (user && user.role === 'patient' && !selectedPatient) {
+      setSelectedPatient(user);
+    }
+  }, [user, selectedPatient]);
+
   useEffect(() => {
     const fetchData = async () => {
       if (!user) return; // Wait for user to be loaded
@@ -76,10 +83,8 @@ export default function BookAppointment() {
         if (user.role === 'staff' || user.role === 'admin') {
           const patientsRes = await axios.get(`${API}/users?role=patient`, { withCredentials: true });
           setPatients(patientsRes.data);
-        } else {
-          // Patients book for themselves
-          setSelectedPatient(user);
         }
+        // Patient auto-selection handled by separate useEffect
       } catch (error) {
         toast.error('Failed to load data');
       } finally {
