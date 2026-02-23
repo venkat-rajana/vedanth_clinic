@@ -69,6 +69,9 @@ export default function UserManagement() {
   const [roleFilter, setRoleFilter] = useState('all');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
+  const [saving, setSaving] = useState(false);
   
   // Create user form
   const [newUser, setNewUser] = useState({
