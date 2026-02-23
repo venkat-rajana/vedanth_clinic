@@ -952,7 +952,7 @@ async def seed_data():
             "patient_id": "user_patient001" if i % 2 == 0 else "user_patient002",
             "doctor_id": "user_doctor001" if i % 2 == 0 else "user_doctor002",
             "date": apt_date,
-            "start_time": f"{9 + i}:00",
+            "start_time": f"{9 + i:02d}:00",
             "duration": 30,
             "appointment_type": types[i],
             "status": statuses[i],
