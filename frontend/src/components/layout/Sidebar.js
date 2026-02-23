@@ -22,20 +22,23 @@ import { cn } from '../../lib/utils';
 const navItems = {
   admin: [
     { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+    { path: '/schedule', icon: Calendar, label: 'Schedule' },
     { path: '/users', icon: Users, label: 'User Management' },
-    { path: '/appointments', icon: Calendar, label: 'All Appointments' },
+    { path: '/appointments', icon: ClipboardList, label: 'All Appointments' },
     { path: '/invoices', icon: Receipt, label: 'Invoices' },
     { path: '/settings', icon: Settings, label: 'Settings' },
   ],
   doctor: [
     { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-    { path: '/appointments', icon: Calendar, label: 'My Appointments' },
+    { path: '/schedule', icon: Calendar, label: 'Schedule' },
+    { path: '/appointments', icon: ClipboardList, label: 'My Appointments' },
     { path: '/patients', icon: Users, label: 'My Patients' },
-    { path: '/medical-records', icon: ClipboardList, label: 'Medical Records' },
+    { path: '/medical-records', icon: FileText, label: 'Medical Records' },
   ],
   staff: [
     { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-    { path: '/book-appointment', icon: Calendar, label: 'Book Appointment' },
+    { path: '/schedule', icon: Calendar, label: 'Schedule' },
+    { path: '/book-appointment', icon: ClipboardList, label: 'Book Appointment' },
     { path: '/appointments', icon: ClipboardList, label: 'Today\'s Schedule' },
     { path: '/invoices', icon: Receipt, label: 'Billing' },
     { path: '/patients', icon: Users, label: 'Patients' },
