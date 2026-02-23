@@ -1,18 +1,40 @@
 import { useAuth } from '../../contexts/AuthContext';
 import { PresenceIndicator } from '../shared/PresenceIndicator';
-import { Bell, Search } from 'lucide-react';
+import { Bell, ArrowLeft } from 'lucide-react';
 import { Button } from '../ui/button';
-import { Input } from '../ui/input';
+import { useNavigate } from 'react-router-dom';
 
-export const Header = ({ title, subtitle }) => {
+export const Header = ({ title, subtitle, showBack = false, backPath }) => {
   const { user } = useAuth();
+  const navigate = useNavigate();
+
+  const handleBack = () => {
+    if (backPath) {
+      navigate(backPath);
+    } else {
+      navigate(-1);
+    }
+  };
 
   return (
     <header className="bg-white border-b border-slate-200 px-6 py-4">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">{title}</h1>
-          {subtitle && <p className="text-sm text-slate-500 mt-1">{subtitle}</p>}
+        <div className="flex items-center gap-4">
+          {showBack && (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={handleBack}
+              className="hover:bg-slate-100"
+              data-testid="back-btn"
+            >
+              <ArrowLeft className="h-5 w-5 text-slate-600" />
+            </Button>
+          )}
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">{title}</h1>
+            {subtitle && <p className="text-sm text-slate-500 mt-1">{subtitle}</p>}
+          </div>
         </div>
 
         <div className="flex items-center gap-4">
