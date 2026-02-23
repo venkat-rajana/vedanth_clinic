@@ -88,10 +88,10 @@ export default function Dashboard() {
 // Admin Dashboard
 const AdminDashboard = ({ stats, appointments, loading }) => {
   const statCards = [
-    { label: 'Total Patients', value: stats?.total_patients || 0, icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
-    { label: 'Total Doctors', value: stats?.total_doctors || 0, icon: Stethoscope, color: 'text-teal-600', bg: 'bg-teal-50' },
-    { label: 'Today\'s Appointments', value: stats?.today_appointments || 0, icon: Calendar, color: 'text-amber-600', bg: 'bg-amber-50' },
-    { label: 'Pending Invoices', value: stats?.pending_invoices || 0, icon: Receipt, color: 'text-red-600', bg: 'bg-red-50' },
+    { label: 'Total Patients', value: stats?.total_patients || 0, icon: Users, color: 'text-blue-600', bg: 'bg-blue-50', link: '/users?role=patient' },
+    { label: 'Total Doctors', value: stats?.total_doctors || 0, icon: Stethoscope, color: 'text-teal-600', bg: 'bg-teal-50', link: '/users?role=doctor' },
+    { label: 'Today\'s Appointments', value: stats?.today_appointments || 0, icon: Calendar, color: 'text-amber-600', bg: 'bg-amber-50', link: '/appointments' },
+    { label: 'Pending Invoices', value: stats?.pending_invoices || 0, icon: Receipt, color: 'text-red-600', bg: 'bg-red-50', link: '/invoices?status=pending' },
   ];
 
   return (
@@ -99,23 +99,25 @@ const AdminDashboard = ({ stats, appointments, loading }) => {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {statCards.map((stat, index) => (
-          <Card key={index}>
-            <CardContent className="p-6">
-              {loading ? (
-                <Skeleton className="h-20 w-full" />
-              ) : (
-                <div className="flex items-center gap-4">
-                  <div className={`w-12 h-12 rounded-lg ${stat.bg} flex items-center justify-center`}>
-                    <stat.icon className={`h-6 w-6 ${stat.color}`} />
+          <Link to={stat.link} key={index}>
+            <Card className="hover:shadow-md transition-shadow cursor-pointer">
+              <CardContent className="p-6">
+                {loading ? (
+                  <Skeleton className="h-20 w-full" />
+                ) : (
+                  <div className="flex items-center gap-4">
+                    <div className={`w-12 h-12 rounded-lg ${stat.bg} flex items-center justify-center`}>
+                      <stat.icon className={`h-6 w-6 ${stat.color}`} />
+                    </div>
+                    <div>
+                      <p className="text-3xl font-bold text-slate-900 tabular-nums">{stat.value}</p>
+                      <p className="text-sm text-slate-500">{stat.label}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-3xl font-bold text-slate-900 tabular-nums">{stat.value}</p>
-                    <p className="text-sm text-slate-500">{stat.label}</p>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                )}
+              </CardContent>
+            </Card>
+          </Link>
         ))}
       </div>
 
