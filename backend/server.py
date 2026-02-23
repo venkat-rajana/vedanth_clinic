@@ -368,10 +368,14 @@ async def update_user(user_id: str, update: UserUpdate, request: Request):
 
 @api_router.post("/users")
 async def create_user(user_data: UserCreate, request: Request):
-    """Create new user (admin only)"""
+    """Create new user (admin can create any, staff can create patients)"""
     current_user = await get_current_user(request)
     
-    if current_user["role"] != "admin":
+    # Admin can create any user, staff can only create patients
+    if current_user["role"] == "staff":
+        if user_data.role != "patient":
+            raise HTTPException(status_code=403, detail="Staff can only register patients")
+    elif current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Not authorized")
     
     # Check if email exists
