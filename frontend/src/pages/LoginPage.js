@@ -6,8 +6,8 @@ export default function LoginPage() {
   const { login } = useAuth();
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6">
+      <div className="w-full max-w-md mx-auto">
         <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-8">
           {/* Logo */}
           <div className="text-center mb-8">
