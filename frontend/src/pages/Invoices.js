@@ -147,72 +147,127 @@ export default function Invoices() {
   const handleDownloadPDF = () => {
     if (!selectedInvoice) return;
     
-    // Create printable content
-    const printContent = `
-      <html>
-        <head>
-          <title>Invoice ${selectedInvoice.invoice_id}</title>
-          <style>
-            body { font-family: Arial, sans-serif; padding: 40px; }
-            .header { text-align: center; margin-bottom: 40px; }
-            .header h1 { color: #0F766E; margin: 0; }
-            .info { display: flex; justify-content: space-between; margin-bottom: 30px; }
-            .info-block { flex: 1; }
-            .info-block h3 { color: #64748B; font-size: 12px; margin-bottom: 8px; text-transform: uppercase; }
-            table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
-            th, td { padding: 12px; text-align: left; border-bottom: 1px solid #E2E8F0; }
-            th { background: #F8FAFC; font-weight: 600; }
-            .total { text-align: right; font-size: 18px; font-weight: bold; }
-            .status { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; }
-            .status-paid { background: #D1FAE5; color: #065F46; }
-            .status-pending { background: #FEF3C7; color: #92400E; }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <h1>VEDANTH CLINIC</h1>
-            <p>Invoice #${selectedInvoice.invoice_id}</p>
-          </div>
-          <div class="info">
-            <div class="info-block">
-              <h3>Patient</h3>
-              <p><strong>${selectedInvoice.patient?.name || 'N/A'}</strong></p>
-              <p>${selectedInvoice.patient?.email || ''}</p>
-              <p>${selectedInvoice.patient?.phone || ''}</p>
-            </div>
-            <div class="info-block">
-              <h3>Invoice Details</h3>
-              <p><strong>Date:</strong> ${formatDate(selectedInvoice.generated_at)}</p>
-              <p><strong>Status:</strong> <span class="status status-${selectedInvoice.status}">${selectedInvoice.status.toUpperCase()}</span></p>
-            </div>
-          </div>
-          <table>
-            <thead>
-              <tr>
-                <th>Description</th>
-                <th style="text-align: right;">Amount</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${selectedInvoice.items.map(item => `
-                <tr>
-                  <td>${item.description}</td>
-                  <td style="text-align: right;">₹${item.amount}</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-          <div class="total">
-            Total: ₹${selectedInvoice.total_amount}
-          </div>
-        </body>
-      </html>
-    `;
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
     
-    const printWindow = window.open('', '_blank');
-    printWindow.document.write(printContent);
-    printWindow.document.close();
-    printWindow.print();
+    // Header
+    doc.setFillColor(15, 118, 110); // teal-700
+    doc.rect(0, 0, pageWidth, 40, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(22);
+    doc.setFont('helvetica', 'bold');
+    doc.text('VEDANTH CLINIC', pageWidth / 2, 20, { align: 'center' });
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Tax Invoice', pageWidth / 2, 30, { align: 'center' });
+    
+    // Invoice meta
+    let y = 55;
+    doc.setTextColor(100, 116, 139); // slate-500
+    doc.setFontSize(9);
+    doc.text('INVOICE NUMBER', 20, y);
+    doc.text('DATE', pageWidth - 60, y);
+    y += 6;
+    doc.setTextColor(15, 23, 42); // slate-900
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.text(selectedInvoice.invoice_id.toUpperCase(), 20, y);
+    doc.text(formatDate(selectedInvoice.generated_at), pageWidth - 60, y);
+    
+    // Status badge
+    y += 8;
+    const statusColors = {
+      paid: [5, 150, 105],
+      pending: [217, 119, 6],
+      waived: [100, 116, 139]
+    };
+    const [r, g, b] = statusColors[selectedInvoice.status] || statusColors.pending;
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(r, g, b);
+    doc.text(selectedInvoice.status.toUpperCase(), 20, y);
+
+    // Patient info
+    y += 14;
+    doc.setTextColor(100, 116, 139);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.text('BILL TO', 20, y);
+    y += 6;
+    doc.setTextColor(15, 23, 42);
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.text(selectedInvoice.patient?.name || 'N/A', 20, y);
+    y += 6;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.setTextColor(71, 85, 105);
+    if (selectedInvoice.patient?.email) doc.text(selectedInvoice.patient.email, 20, y);
+    y += 5;
+    if (selectedInvoice.patient?.phone) doc.text(selectedInvoice.patient.phone, 20, y);
+    
+    // Doctor info (if available)
+    if (selectedInvoice.doctor) {
+      const doctorY = 83;
+      doc.setTextColor(100, 116, 139);
+      doc.setFontSize(9);
+      doc.text('ATTENDING DOCTOR', pageWidth - 60, doctorY);
+      doc.setTextColor(15, 23, 42);
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.text(selectedInvoice.doctor.name || '', pageWidth - 60, doctorY + 6);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.setTextColor(71, 85, 105);
+      if (selectedInvoice.doctor.specialization) {
+        doc.text(selectedInvoice.doctor.specialization, pageWidth - 60, doctorY + 12);
+      }
+    }
+    
+    // Table header
+    y += 16;
+    doc.setFillColor(248, 250, 252); // slate-50
+    doc.rect(20, y - 4, pageWidth - 40, 10, 'F');
+    doc.setTextColor(71, 85, 105);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.text('DESCRIPTION', 25, y + 2);
+    doc.text('AMOUNT', pageWidth - 45, y + 2, { align: 'right' });
+    
+    // Table rows
+    y += 12;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.setTextColor(15, 23, 42);
+    
+    selectedInvoice.items.forEach((item) => {
+      doc.text(item.description, 25, y);
+      doc.text(`Rs. ${Number(item.amount).toLocaleString()}`, pageWidth - 45, y, { align: 'right' });
+      y += 4;
+      doc.setDrawColor(226, 232, 240);
+      doc.line(20, y, pageWidth - 20, y);
+      y += 8;
+    });
+    
+    // Total
+    y += 4;
+    doc.setFillColor(248, 250, 252);
+    doc.rect(pageWidth / 2, y - 4, pageWidth / 2 - 20, 12, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(12);
+    doc.text('Total:', pageWidth / 2 + 10, y + 4);
+    doc.setTextColor(15, 118, 110);
+    doc.text(`Rs. ${Number(selectedInvoice.total_amount).toLocaleString()}`, pageWidth - 45, y + 4, { align: 'right' });
+    
+    // Footer
+    const footerY = doc.internal.pageSize.getHeight() - 20;
+    doc.setTextColor(148, 163, 184);
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Vedanth Clinic - Thank you for choosing us for your healthcare needs.', pageWidth / 2, footerY, { align: 'center' });
+    
+    doc.save(`vedanth-invoice-${selectedInvoice.invoice_id}.pdf`);
+    toast.success('Invoice PDF downloaded');
   };
 
   const addInvoiceItem = () => {
