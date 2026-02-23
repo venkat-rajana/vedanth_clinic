@@ -1,53 +1,116 @@
-import { useEffect } from "react";
 import "@/App.css";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import axios from "axios";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { AuthProvider } from "./contexts/AuthContext";
+import { AuthCallback } from "./components/AuthCallback";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
+// Pages
+import LandingPage from "./pages/LandingPage";
+import LoginPage from "./pages/LoginPage";
+import Dashboard from "./pages/Dashboard";
+import BookAppointment from "./pages/BookAppointment";
+import Appointments from "./pages/Appointments";
+import AppointmentDetail from "./pages/AppointmentDetail";
+import VideoCall from "./pages/VideoCall";
+import MedicalRecords from "./pages/MedicalRecords";
+import Invoices from "./pages/Invoices";
+import UserManagement from "./pages/UserManagement";
+import Unauthorized from "./pages/Unauthorized";
+import NotFound from "./pages/NotFound";
 
-const Home = () => {
-  const helloWorldApi = async () => {
-    try {
-      const response = await axios.get(`${API}/`);
-      console.log(response.data.message);
-    } catch (e) {
-      console.error(e, `errored out requesting / api`);
-    }
-  };
-
-  useEffect(() => {
-    helloWorldApi();
-  }, []);
-
+// Router wrapper to handle auth callback
+function AppRouter() {
+  const location = useLocation();
+  
+  // Check URL fragment for session_id - synchronous check before routes render
+  if (location.hash?.includes('session_id=')) {
+    return <AuthCallback />;
+  }
+  
   return (
-    <div>
-      <header className="App-header">
-        <a
-          className="App-link"
-          href="https://emergent.sh"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <img src="https://avatars.githubusercontent.com/in/1201222?s=120&u=2686cf91179bbafbc7a71bfbc43004cf9ae1acea&v=4" />
-        </a>
-        <p className="mt-5">Building something incredible ~!</p>
-      </header>
-    </div>
+    <Routes>
+      {/* Public routes */}
+      <Route path="/" element={<LandingPage />} />
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/unauthorized" element={<Unauthorized />} />
+      
+      {/* Protected routes - All authenticated users */}
+      <Route path="/dashboard" element={
+        <ProtectedRoute>
+          <Dashboard />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/appointments" element={
+        <ProtectedRoute>
+          <Appointments />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/appointments/:id" element={
+        <ProtectedRoute>
+          <AppointmentDetail />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/book-appointment" element={
+        <ProtectedRoute allowedRoles={['patient', 'staff', 'admin']}>
+          <BookAppointment />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/video-call/:id" element={
+        <ProtectedRoute allowedRoles={['patient', 'doctor']}>
+          <VideoCall />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/medical-records" element={
+        <ProtectedRoute allowedRoles={['patient', 'doctor', 'admin']}>
+          <MedicalRecords />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/invoices" element={
+        <ProtectedRoute>
+          <Invoices />
+        </ProtectedRoute>
+      } />
+      
+      {/* Admin only routes */}
+      <Route path="/users" element={
+        <ProtectedRoute allowedRoles={['admin']}>
+          <UserManagement />
+        </ProtectedRoute>
+      } />
+      
+      {/* Staff routes */}
+      <Route path="/patients" element={
+        <ProtectedRoute allowedRoles={['staff', 'doctor', 'admin']}>
+          <Dashboard />
+        </ProtectedRoute>
+      } />
+      
+      {/* Settings placeholder */}
+      <Route path="/settings" element={
+        <ProtectedRoute>
+          <Dashboard />
+        </ProtectedRoute>
+      } />
+      
+      {/* 404 */}
+      <Route path="*" element={<NotFound />} />
+    </Routes>
   );
-};
+}
 
 function App() {
   return (
-    <div className="App">
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Home />}>
-            <Route index element={<Home />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
-    </div>
+    <BrowserRouter>
+      <AuthProvider>
+        <AppRouter />
+      </AuthProvider>
+    </BrowserRouter>
   );
 }
 
