@@ -17,6 +17,7 @@ import Invoices from "./pages/Invoices";
 import UserManagement from "./pages/UserManagement";
 import Patients from "./pages/Patients";
 import Schedule from "./pages/Schedule";
+import Settings from "./pages/Settings";
 import Unauthorized from "./pages/Unauthorized";
 import NotFound from "./pages/NotFound";
 
@@ -100,10 +101,10 @@ function AppRouter() {
         </ProtectedRoute>
       } />
       
-      {/* Settings placeholder */}
+      {/* Settings - All users */}
       <Route path="/settings" element={
         <ProtectedRoute>
-          <Dashboard />
+          <Settings />
         </ProtectedRoute>
       } />
       
