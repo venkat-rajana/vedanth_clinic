@@ -66,12 +66,14 @@ export default function BookAppointment() {
 
   useEffect(() => {
     const fetchData = async () => {
+      if (!user) return; // Wait for user to be loaded
+      
       try {
         const doctorsRes = await axios.get(`${API}/doctors`, { withCredentials: true });
         setDoctors(doctorsRes.data);
         
-        // Staff can book for any patient
-        if (user?.role === 'staff') {
+        // Staff and admin can book for any patient
+        if (user.role === 'staff' || user.role === 'admin') {
           const patientsRes = await axios.get(`${API}/users?role=patient`, { withCredentials: true });
           setPatients(patientsRes.data);
         } else {
