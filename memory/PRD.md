@@ -101,6 +101,12 @@ A production-ready, full-stack clinic management application with role-based acc
 - [x] Today's schedule view
 - [x] Add diagnosis/prescription on completion
 
+### UI/UX
+- [x] Minimal landing & login pages (hospital name + Google sign-in only)
+- [x] Clickable dashboard stat cards for all roles (admin, doctor, staff)
+- [x] Quick Actions sections on all dashboards with navigation links
+- [x] Schedule link in sidebar for admin, doctor, and staff
+
 ## API Endpoints
 
 ### Authentication
