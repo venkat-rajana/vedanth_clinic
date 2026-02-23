@@ -34,6 +34,7 @@ const navItems = {
     { path: '/appointments', icon: ClipboardList, label: 'My Appointments' },
     { path: '/patients', icon: Users, label: 'My Patients' },
     { path: '/medical-records', icon: FileText, label: 'Medical Records' },
+    { path: '/settings', icon: Settings, label: 'Settings' },
   ],
   staff: [
     { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -42,6 +43,7 @@ const navItems = {
     { path: '/appointments', icon: ClipboardList, label: 'Today\'s Schedule' },
     { path: '/invoices', icon: Receipt, label: 'Billing' },
     { path: '/patients', icon: Users, label: 'Patients' },
+    { path: '/settings', icon: Settings, label: 'Settings' },
   ],
   patient: [
     { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -49,6 +51,7 @@ const navItems = {
     { path: '/appointments', icon: ClipboardList, label: 'My Appointments' },
     { path: '/medical-records', icon: FileText, label: 'Medical History' },
     { path: '/invoices', icon: Receipt, label: 'My Invoices' },
+    { path: '/settings', icon: Settings, label: 'Settings' },
   ],
 };
 
