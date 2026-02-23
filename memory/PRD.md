@@ -4,7 +4,7 @@
 A production-ready, full-stack clinic management application with role-based access control for Admin, Doctor, Staff, and Patient users.
 
 ## Live Application
-- **URL**: https://appt-portal-1.preview.emergentagent.com
+- **URL**: https://appointment-mgmt.preview.emergentagent.com
 - **Admin Email**: venkatrajana3199@gmail.com (login with Google)
 
 ## Tech Stack
