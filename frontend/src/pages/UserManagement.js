@@ -135,6 +135,45 @@ export default function UserManagement() {
     }
   };
 
+  const handleEditClick = (user) => {
+    setEditingUser({
+      user_id: user.user_id,
+      name: user.name || '',
+      phone: user.phone || '',
+      specialization: user.specialization || '',
+      address: user.address || '',
+      role: user.role
+    });
+    setShowEditDialog(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingUser?.name) {
+      toast.error('Name is required');
+      return;
+    }
+    setSaving(true);
+    try {
+      const payload = {
+        name: editingUser.name,
+        phone: editingUser.phone || null,
+        address: editingUser.address || null,
+      };
+      if (editingUser.role === 'doctor') {
+        payload.specialization = editingUser.specialization || null;
+      }
+      await axios.put(`${API}/users/${editingUser.user_id}`, payload, { withCredentials: true });
+      toast.success('User updated successfully');
+      setShowEditDialog(false);
+      setEditingUser(null);
+      fetchUsers();
+    } catch (error) {
+      toast.error('Failed to update user');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const filteredUsers = users.filter(user => {
     const matchesSearch = 
       user.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
