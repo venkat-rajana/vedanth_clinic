@@ -249,6 +249,8 @@ export default function Invoices() {
       <Header 
         title="Invoices" 
         subtitle={user?.role === 'patient' ? 'View your invoices' : 'Manage billing and invoices'}
+        showBack={true}
+        backPath="/dashboard"
       />
       <div className="p-6" data-testid="invoices-page">
         {/* Filters */}

@@ -124,6 +124,8 @@ export default function Patients() {
       <Header 
         title="Patients" 
         subtitle="Manage patient records"
+        showBack={true}
+        backPath="/dashboard"
       />
       <div className="p-6" data-testid="patients-page">
         {/* Stats */}

@@ -184,6 +184,8 @@ export default function BookAppointment() {
       <Header 
         title="Book Appointment" 
         subtitle="Schedule a visit with one of our doctors"
+        showBack={true}
+        backPath="/dashboard"
       />
       <div className="p-6" data-testid="book-appointment-page">
         <div className="grid lg:grid-cols-3 gap-6">

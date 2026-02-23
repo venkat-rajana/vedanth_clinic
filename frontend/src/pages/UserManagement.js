@@ -165,6 +165,8 @@ export default function UserManagement() {
       <Header 
         title="User Management" 
         subtitle="Manage clinic staff and patients"
+        showBack={true}
+        backPath="/dashboard"
       />
       <div className="p-6" data-testid="user-management-page">
         {/* Stats */}

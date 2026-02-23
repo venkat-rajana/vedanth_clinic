@@ -55,6 +55,8 @@ export default function MedicalRecords() {
       <Header 
         title="Medical Records" 
         subtitle={user?.role === 'patient' ? 'View your medical history' : 'Patient medical records'}
+        showBack={true}
+        backPath="/dashboard"
       />
       <div className="p-6" data-testid="medical-records-page">
         {/* Search */}

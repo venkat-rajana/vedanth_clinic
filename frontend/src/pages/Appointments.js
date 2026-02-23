@@ -196,6 +196,8 @@ export default function Appointments() {
       <Header 
         title="Appointments" 
         subtitle={user?.role === 'patient' ? 'View and manage your appointments' : 'Manage all appointments'}
+        showBack={true}
+        backPath="/dashboard"
       />
       <div className="p-6" data-testid="appointments-page">
         {/* Filters */}
