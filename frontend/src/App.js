@@ -16,6 +16,7 @@ import MedicalRecords from "./pages/MedicalRecords";
 import Invoices from "./pages/Invoices";
 import UserManagement from "./pages/UserManagement";
 import Patients from "./pages/Patients";
+import Schedule from "./pages/Schedule";
 import Unauthorized from "./pages/Unauthorized";
 import NotFound from "./pages/NotFound";
 
@@ -89,6 +90,13 @@ function AppRouter() {
       <Route path="/patients" element={
         <ProtectedRoute allowedRoles={['staff', 'doctor', 'admin']}>
           <Patients />
+        </ProtectedRoute>
+      } />
+      
+      {/* Schedule - Admin, Doctor, Staff */}
+      <Route path="/schedule" element={
+        <ProtectedRoute allowedRoles={['admin', 'doctor', 'staff']}>
+          <Schedule />
         </ProtectedRoute>
       } />
       
