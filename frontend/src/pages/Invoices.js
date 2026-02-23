@@ -46,6 +46,7 @@ import {
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { formatDate } from '../lib/utils';
+import { jsPDF } from 'jspdf';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
