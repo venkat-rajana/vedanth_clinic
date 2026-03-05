@@ -213,27 +213,45 @@ backend:
 frontend:
   - task: "Landing and Login Pages"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/frontend/src/pages/LandingPage.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Initial testing needed"
+      - working: true
+        agent: "testing"
+        comment: "Comprehensive testing completed successfully. Landing page loads correctly with Vedanth Clinic title and subtitle. Both Google and Email sign-in buttons are visible with correct labels and data-testid attributes. Email/password form toggle works perfectly - clicking 'Sign In with Email' shows the form with email and password inputs, and 'Back to options' returns to the main view. Invalid login credentials properly display error message 'Invalid email or password'. Email/password authentication working correctly for all three test users (doctor, staff, patient) with successful login and redirect to role-based dashboards. No critical issues found."
 
   - task: "Dashboard with Role-Based Views"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/frontend/src/pages/Dashboard.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Initial testing needed"
+      - working: true
+        agent: "testing"
+        comment: "All three role-based dashboards (Doctor, Staff, Patient) are working correctly. Doctor dashboard displays 'Doctor Portal' in sidebar with proper menu items (Dashboard, Schedule, My Appointments, My Patients, Medical Records, Settings) and shows stats for today's appointments, patients, and total appointments. Staff dashboard shows 'Staff Portal' with menu items (Dashboard, Schedule, Book Appointment, Today's Schedule, Billing, Patients, Settings) and displays stats for today's appointments, pending check-ins, and pending invoices. Patient dashboard displays 'Patient Portal' with menu items (Dashboard, Book Appointment, My Appointments, Medical History, My Invoices, Settings) with welcome banner, upcoming appointments count, and total visits. All dashboards load correctly with role-appropriate content and stats. However, CRITICAL BUG: Sidebar navigation links (NavLink components) do NOT work - clicking them does not navigate to other pages. The links have correct href attributes but click events don't trigger navigation."
+
+  - task: "Sidebar Navigation"
+    implemented: true
+    working: false
+    file: "/app/frontend/src/components/layout/Sidebar.js"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "testing"
+        comment: "CRITICAL BUG FOUND: Sidebar NavLink components are not functioning. When clicking on any sidebar menu item (Schedule, Appointments, Patients, Medical Records, Settings, etc.), the page does NOT navigate. The links have correct href attributes (e.g., href='/schedule') and are using NavLink from react-router-dom, but clicking them has no effect - the browser stays on the current page. Testing confirmed that direct URL navigation (using page.goto) works perfectly - all pages load correctly when accessed via direct URL. This indicates the pages themselves are fine, but the NavLink click event handlers are not triggering navigation. The issue affects all roles (doctor, staff, patient) and all menu items. Sign Out button also does not work when clicked. This is blocking users from navigating through the application using the sidebar menu."
 
   - task: "Appointment Booking Wizard"
     implemented: true
@@ -246,6 +264,9 @@ frontend:
       - working: "NA"
         agent: "main"
         comment: "Initial testing needed"
+      - working: "NA"
+        agent: "testing"
+        comment: "Page loads correctly when accessed via direct URL for all roles (staff, patient). However, unable to test full booking flow functionality due to sidebar navigation bug preventing normal user access to this page. Needs retesting after navigation bug is fixed."
 
   - task: "Schedule Calendar View"
     implemented: true
@@ -258,16 +279,21 @@ frontend:
       - working: "NA"
         agent: "main"
         comment: "Initial testing needed"
+      - working: "NA"
+        agent: "testing"
+        comment: "Page loads correctly when accessed via direct URL. Schedule calendar displays properly with week view, time slots, and appointment status legend. However, unable to test full functionality due to sidebar navigation bug. Needs retesting after navigation bug is fixed."
 
 metadata:
   created_by: "main_agent"
   version: "1.0"
-  test_sequence: 3
+  test_sequence: 4
   run_ui: false
 
 test_plan:
-  current_focus: []
-  stuck_tasks: []
+  current_focus:
+    - "Sidebar Navigation"
+  stuck_tasks:
+    - "Sidebar Navigation"
   test_all: false
   test_priority: "high_first"
 
@@ -276,7 +302,11 @@ agent_communication:
     message: "Application loaded. Test data seeded. Running initial backend tests to identify any errors."
   - agent: "main"
     message: "Added email/password login feature. Admin role fixed for venkatrajana3199@gmail.com. User creation now supports passwords. Testing new authentication endpoints."
+  - agent: "main"
+    message: "Backend tests passed. User requested frontend UI testing. Running comprehensive frontend tests."
   - agent: "testing"
     message: "Comprehensive backend testing completed successfully. All 40 API endpoint tests passed including: Root endpoint, Authentication (session exchange, user validation, logout), User management CRUD with role-based access control, Appointment CRUD with slot management and conflict detection, Medical records API with proper authorization, Invoice API with role-based filtering, Dashboard stats with role-specific data, Doctor presence management. All authentication and authorization mechanisms working correctly. No critical issues found - backend APIs ready for production use."
   - agent: "testing"
     message: "Email/password authentication testing completed successfully. Created and tested 21 authentication scenarios including user creation with passwords, login validation, security checks, and API endpoint protection. All new authentication features working correctly: POST /api/auth/login authenticates users properly with role-based access. User creation supports password hashing. Password security verified - no password_hash exposure in any API responses. Google-only account protection working. No critical authentication issues found."
+  - agent: "testing"
+    message: "Frontend UI testing completed. CRITICAL BUG FOUND: Sidebar navigation is completely broken - NavLink components do not navigate when clicked. Successfully tested: Landing page (works perfectly), Email/password login flow (works), Role-based dashboards (all 3 roles display correctly), All pages load correctly via direct URL navigation. Issue: Had to create test users with SHA256 password hashes (backend uses custom hash function, not bcrypt). Test users created: test.doctor@vedanth.com/doctor123, test.staff@vedanth.com/staff123, test.patient@vedanth.com/patient123. Main issue: Sidebar NavLink components have correct href attributes but click events don't trigger React Router navigation. Affects all roles and all menu items including Sign Out button. Pages themselves work fine when accessed directly. This is blocking all in-app navigation."
