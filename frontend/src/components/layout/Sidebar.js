@@ -1,4 +1,4 @@
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import {
   LayoutDashboard,
@@ -66,8 +66,8 @@ export const Sidebar = () => {
 
   const NavContent = () => (
     <>
-      {/* Logo */}
-      <div className="p-6 border-b border-slate-200">
+      {/* Logo - clickable to go home */}
+      <Link to="/dashboard" className="block p-6 border-b border-slate-200 hover:bg-slate-50 transition-colors">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-lg bg-teal-700 flex items-center justify-center">
             <Stethoscope className="h-6 w-6 text-white" />
@@ -77,7 +77,7 @@ export const Sidebar = () => {
             <p className="text-xs text-slate-500 capitalize">{user.role} Portal</p>
           </div>
         </div>
-      </div>
+      </Link>
 
       {/* Navigation */}
       <nav className="flex-1 p-4 space-y-1">

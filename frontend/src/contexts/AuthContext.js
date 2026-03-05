@@ -42,6 +42,23 @@ export const AuthProvider = ({ children }) => {
     window.location.href = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
   };
 
+  const emailLogin = async (email, password) => {
+    try {
+      const response = await axios.post(
+        `${API}/auth/login`,
+        { email, password },
+        { withCredentials: true }
+      );
+      setUser(response.data.user);
+      setLastActivity(Date.now());
+      window.location.href = '/dashboard';
+      return response.data.user;
+    } catch (error) {
+      console.error('Email login error:', error);
+      throw new Error(error.response?.data?.detail || 'Login failed');
+    }
+  };
+
   const logout = async () => {
     try {
       await axios.post(`${API}/auth/logout`, {}, { withCredentials: true });
@@ -116,6 +133,7 @@ export const AuthProvider = ({ children }) => {
     setUser,
     loading,
     login,
+    emailLogin,
     logout,
     checkAuth,
     refreshUser: checkAuth,

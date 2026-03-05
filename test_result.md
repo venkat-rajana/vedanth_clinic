@@ -195,6 +195,21 @@ backend:
         agent: "testing"
         comment: "Dashboard stats endpoint GET /api/stats/dashboard working correctly for all user roles. Returns appropriate statistics based on user role: admin sees system-wide stats, doctors see their appointment/patient counts, staff sees daily operations stats, patients see their appointment summary."
 
+  - task: "Email/Password Authentication"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Added email/password login feature with password hashing and user creation support"
+      - working: true
+        agent: "testing"
+        comment: "Comprehensive testing of new email/password authentication completed successfully. All tests passed: POST /api/auth/login works correctly with valid/invalid credentials for all user roles (doctor, staff, patient). User creation with passwords via POST /api/users working properly. Password hash correctly excluded from all API responses (GET /api/auth/me, GET /api/users, GET /api/users/{id}). Google-only accounts properly protected from email/password login attempts. Security measures in place - no password leakage in responses."
+
 frontend:
   - task: "Landing and Login Pages"
     implemented: true
@@ -247,7 +262,7 @@ frontend:
 metadata:
   created_by: "main_agent"
   version: "1.0"
-  test_sequence: 2
+  test_sequence: 3
   run_ui: false
 
 test_plan:
@@ -259,5 +274,9 @@ test_plan:
 agent_communication:
   - agent: "main"
     message: "Application loaded. Test data seeded. Running initial backend tests to identify any errors."
+  - agent: "main"
+    message: "Added email/password login feature. Admin role fixed for venkatrajana3199@gmail.com. User creation now supports passwords. Testing new authentication endpoints."
   - agent: "testing"
     message: "Comprehensive backend testing completed successfully. All 40 API endpoint tests passed including: Root endpoint, Authentication (session exchange, user validation, logout), User management CRUD with role-based access control, Appointment CRUD with slot management and conflict detection, Medical records API with proper authorization, Invoice API with role-based filtering, Dashboard stats with role-specific data, Doctor presence management. All authentication and authorization mechanisms working correctly. No critical issues found - backend APIs ready for production use."
+  - agent: "testing"
+    message: "Email/password authentication testing completed successfully. Created and tested 21 authentication scenarios including user creation with passwords, login validation, security checks, and API endpoint protection. All new authentication features working correctly: POST /api/auth/login authenticates users properly with role-based access. User creation supports password hashing. Password security verified - no password_hash exposure in any API responses. Google-only account protection working. No critical authentication issues found."

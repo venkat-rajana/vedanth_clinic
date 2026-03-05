@@ -11,6 +11,11 @@ from typing import List, Optional, Literal
 import uuid
 from datetime import datetime, timezone, timedelta
 import httpx
+import hashlib
+import secrets
+
+# Admin emails that should automatically get admin role
+ADMIN_EMAILS = ["venkatrajana3199@gmail.com"]
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -53,6 +58,7 @@ class UserBase(BaseModel):
     picture: Optional[str] = None
     presence: DoctorPresenceType = "offline"
     is_active: bool = True
+    password_hash: Optional[str] = None  # For email/password login
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class UserCreate(BaseModel):
@@ -62,6 +68,11 @@ class UserCreate(BaseModel):
     specialization: Optional[str] = None
     phone: Optional[str] = None
     address: Optional[str] = None
+    password: Optional[str] = None  # Optional password for credential-based login
+
+class EmailPasswordLogin(BaseModel):
+    email: str
+    password: str
 
 class UserUpdate(BaseModel):
     name: Optional[str] = None
@@ -157,6 +168,21 @@ class SessionData(BaseModel):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 # ============ HELPER FUNCTIONS ============
+def hash_password(password: str) -> str:
+    """Hash password using SHA256 with salt"""
+    salt = secrets.token_hex(16)
+    hash_obj = hashlib.sha256((password + salt).encode())
+    return f"{salt}:{hash_obj.hexdigest()}"
+
+def verify_password(password: str, password_hash: str) -> bool:
+    """Verify password against hash"""
+    try:
+        salt, stored_hash = password_hash.split(":")
+        hash_obj = hashlib.sha256((password + salt).encode())
+        return hash_obj.hexdigest() == stored_hash
+    except:
+        return False
+
 async def get_current_user(request: Request) -> dict:
     """Extract and validate user from session token"""
     # Check cookie first, then Authorization header
@@ -244,19 +270,24 @@ async def exchange_session(request: Request, response: Response):
     if existing_user:
         user_id = existing_user["user_id"]
         # Update user info if needed
+        update_data = {"name": name, "picture": picture}
+        # Check if this email should be admin
+        if email in ADMIN_EMAILS and existing_user.get("role") != "admin":
+            update_data["role"] = "admin"
         await db.users.update_one(
             {"user_id": user_id},
-            {"$set": {"name": name, "picture": picture}}
+            {"$set": update_data}
         )
     else:
-        # Create new patient user
+        # Create new user - check if should be admin
         user_id = f"user_{uuid.uuid4().hex[:12]}"
+        role = "admin" if email in ADMIN_EMAILS else "patient"
         new_user = {
             "user_id": user_id,
             "email": email,
             "name": name,
             "picture": picture,
-            "role": "patient",
+            "role": role,
             "is_active": True,
             "presence": "offline",
             "created_at": datetime.now(timezone.utc).isoformat()
@@ -296,7 +327,8 @@ async def exchange_session(request: Request, response: Response):
 async def get_me(request: Request):
     """Get current authenticated user"""
     user = await get_current_user(request)
-    return user
+    # Remove password_hash from response
+    return {k: v for k, v in user.items() if k != "password_hash"}
 
 @api_router.post("/auth/logout")
 async def logout(request: Request, response: Response):
@@ -307,6 +339,57 @@ async def logout(request: Request, response: Response):
     
     response.delete_cookie(key="session_token", path="/")
     return {"message": "Logged out"}
+
+@api_router.post("/auth/login")
+async def email_password_login(login_data: EmailPasswordLogin, response: Response):
+    """Login with email and password"""
+    # Find user by email
+    user = await db.users.find_one({"email": login_data.email}, {"_id": 0})
+    
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+    
+    if not user.get("is_active", True):
+        raise HTTPException(status_code=401, detail="Account is deactivated")
+    
+    # Check if user has password set
+    if not user.get("password_hash"):
+        raise HTTPException(status_code=401, detail="This account uses Google sign-in. Please use Google to login.")
+    
+    # Verify password
+    if not verify_password(login_data.password, user["password_hash"]):
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+    
+    # Create session
+    session_token = secrets.token_urlsafe(32)
+    expires_at = datetime.now(timezone.utc) + timedelta(days=7)
+    
+    session_doc = {
+        "user_id": user["user_id"],
+        "session_token": session_token,
+        "expires_at": expires_at.isoformat(),
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    # Remove old sessions for this user
+    await db.user_sessions.delete_many({"user_id": user["user_id"]})
+    await db.user_sessions.insert_one(session_doc)
+    
+    # Set cookie
+    response.set_cookie(
+        key="session_token",
+        value=session_token,
+        httponly=True,
+        secure=True,
+        samesite="none",
+        path="/",
+        max_age=7 * 24 * 60 * 60
+    )
+    
+    # Return user without password_hash
+    user_response = {k: v for k, v in user.items() if k != "password_hash"}
+    
+    return {"user": user_response, "message": "Login successful"}
 
 # ============ USER ROUTES ============
 @api_router.get("/users")
@@ -325,7 +408,7 @@ async def get_users(request: Request, role: Optional[str] = None):
     if current_user["role"] == "doctor":
         query["role"] = "patient"
     
-    users = await db.users.find(query, {"_id": 0}).to_list(1000)
+    users = await db.users.find(query, {"_id": 0, "password_hash": 0}).to_list(1000)
     return users
 
 @api_router.get("/users/{user_id}")
@@ -337,7 +420,7 @@ async def get_user(user_id: str, request: Request):
     if current_user["user_id"] != user_id and current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Not authorized")
     
-    user = await db.users.find_one({"user_id": user_id}, {"_id": 0})
+    user = await db.users.find_one({"user_id": user_id}, {"_id": 0, "password_hash": 0})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
@@ -387,13 +470,19 @@ async def create_user(user_data: UserCreate, request: Request):
     if existing:
         raise HTTPException(status_code=400, detail="Email already exists")
     
+    # Hash password if provided
+    password_hash = None
+    if user_data.password:
+        password_hash = hash_password(user_data.password)
+    
     new_user = UserBase(
         email=user_data.email,
         name=user_data.name,
         role=user_data.role,
         specialization=user_data.specialization,
         phone=user_data.phone,
-        address=user_data.address
+        address=user_data.address,
+        password_hash=password_hash
     )
     
     doc = new_user.model_dump()
@@ -402,7 +491,9 @@ async def create_user(user_data: UserCreate, request: Request):
     await db.users.insert_one(doc)
     await log_audit(current_user["user_id"], "CREATE_USER", new_user.user_id, "user")
     
-    return await db.users.find_one({"user_id": new_user.user_id}, {"_id": 0})
+    # Return user without password_hash
+    result = await db.users.find_one({"user_id": new_user.user_id}, {"_id": 0, "password_hash": 0})
+    return result
 
 @api_router.get("/doctors")
 async def get_doctors(request: Request):

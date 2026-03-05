@@ -46,7 +46,8 @@ import {
   Edit,
   Ban,
   CheckCircle2,
-  Loader2
+  Loader2,
+  Lock
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -79,7 +80,8 @@ export default function UserManagement() {
     email: '',
     role: 'staff',
     specialization: '',
-    phone: ''
+    phone: '',
+    password: ''
   });
 
   useEffect(() => {
@@ -102,13 +104,24 @@ export default function UserManagement() {
       toast.error('Name and email are required');
       return;
     }
+    
+    // Password required for staff and doctor roles
+    if ((newUser.role === 'staff' || newUser.role === 'doctor') && !newUser.password) {
+      toast.error('Password is required for staff and doctor accounts');
+      return;
+    }
+    
+    if (newUser.password && newUser.password.length < 6) {
+      toast.error('Password must be at least 6 characters');
+      return;
+    }
 
     setCreating(true);
     try {
       await axios.post(`${API}/users`, newUser, { withCredentials: true });
       toast.success('User created successfully');
       setShowCreateDialog(false);
-      setNewUser({ name: '', email: '', role: 'staff', specialization: '', phone: '' });
+      setNewUser({ name: '', email: '', role: 'staff', specialization: '', phone: '', password: '' });
       fetchUsers();
     } catch (error) {
       if (error.response?.status === 400) {
@@ -432,7 +445,7 @@ export default function UserManagement() {
             <DialogHeader>
               <DialogTitle>Add New User</DialogTitle>
               <DialogDescription>
-                Create a new staff member or doctor account.
+                Create a new staff member, doctor, or patient account with login credentials.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
@@ -465,8 +478,13 @@ export default function UserManagement() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="doctor">Doctor</SelectItem>
-                    <SelectItem value="staff">Staff</SelectItem>
+                    {currentUser?.role === 'admin' && (
+                      <>
+                        <SelectItem value="doctor">Doctor</SelectItem>
+                        <SelectItem value="staff">Staff</SelectItem>
+                      </>
+                    )}
+                    <SelectItem value="patient">Patient</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -490,6 +508,36 @@ export default function UserManagement() {
                   data-testid="new-user-phone"
                 />
               </div>
+              {(newUser.role === 'staff' || newUser.role === 'doctor') && (
+                <div>
+                  <Label>Password <span className="text-red-500">*</span></Label>
+                  <Input
+                    type="password"
+                    value={newUser.password}
+                    onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                    placeholder="Min 6 characters"
+                    data-testid="new-user-password"
+                  />
+                  <p className="text-xs text-slate-500 mt-1">
+                    User will use this password to login with their email
+                  </p>
+                </div>
+              )}
+              {newUser.role === 'patient' && (
+                <div>
+                  <Label>Password (Optional)</Label>
+                  <Input
+                    type="password"
+                    value={newUser.password}
+                    onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                    placeholder="Leave empty for Google-only login"
+                    data-testid="new-user-password"
+                  />
+                  <p className="text-xs text-slate-500 mt-1">
+                    If not set, patient can only login via Google
+                  </p>
+                </div>
+              )}
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
