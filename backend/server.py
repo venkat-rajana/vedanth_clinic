@@ -665,13 +665,26 @@ async def get_appointments(
     
     appointments = await db.appointments.find(query, {"_id": 0}).to_list(1000)
     
-    # Enrich with patient and doctor names
-    for apt in appointments:
-        patient = await db.users.find_one({"user_id": apt["patient_id"]}, {"_id": 0, "name": 1})
-        doctor = await db.users.find_one({"user_id": apt["doctor_id"]}, {"_id": 0, "name": 1, "specialization": 1})
-        apt["patient_name"] = patient["name"] if patient else "Unknown"
-        apt["doctor_name"] = doctor["name"] if doctor else "Unknown"
-        apt["doctor_specialization"] = doctor.get("specialization") if doctor else None
+    # Batch fetch all patient and doctor info to avoid N+1 queries
+    if appointments:
+        patient_ids = list(set([apt["patient_id"] for apt in appointments]))
+        doctor_ids = list(set([apt["doctor_id"] for apt in appointments]))
+        all_user_ids = list(set(patient_ids + doctor_ids))
+        
+        users = await db.users.find(
+            {"user_id": {"$in": all_user_ids}},
+            {"_id": 0, "user_id": 1, "name": 1, "specialization": 1}
+        ).to_list(len(all_user_ids))
+        
+        user_map = {u["user_id"]: u for u in users}
+        
+        # Enrich appointments with user data
+        for apt in appointments:
+            patient = user_map.get(apt["patient_id"], {})
+            doctor = user_map.get(apt["doctor_id"], {})
+            apt["patient_name"] = patient.get("name", "Unknown")
+            apt["doctor_name"] = doctor.get("name", "Unknown")
+            apt["doctor_specialization"] = doctor.get("specialization")
     
     return appointments
 
@@ -857,8 +870,21 @@ async def get_medical_records(request: Request, patient_id: Optional[str] = None
     
     records = await db.medical_records.find(query, {"_id": 0}).to_list(1000)
     
-    for record in records:
-        await log_audit(current_user["user_id"], "VIEW_MEDICAL_RECORD", record["record_id"], "medical_record")
+    # Batch log audit entries instead of N+1 inserts
+    if records:
+        audit_logs = []
+        timestamp = datetime.now(timezone.utc).isoformat()
+        for record in records:
+            audit_logs.append({
+                "log_id": f"log_{uuid.uuid4().hex[:12]}",
+                "user_id": current_user["user_id"],
+                "action": "VIEW_MEDICAL_RECORD",
+                "target_id": record["record_id"],
+                "target_type": "medical_record",
+                "timestamp": timestamp
+            })
+        if audit_logs:
+            await db.audit_logs.insert_many(audit_logs)
     
     return records
 
@@ -903,12 +929,28 @@ async def get_invoices(request: Request, patient_id: Optional[str] = None):
     
     invoices = await db.invoices.find(query, {"_id": 0}).to_list(1000)
     
-    # Enrich with appointment and patient data
-    for inv in invoices:
-        patient = await db.users.find_one({"user_id": inv["patient_id"]}, {"_id": 0, "name": 1, "email": 1, "phone": 1, "address": 1})
-        appointment = await db.appointments.find_one({"appointment_id": inv["appointment_id"]}, {"_id": 0})
-        inv["patient"] = patient
-        inv["appointment"] = appointment
+    # Batch fetch patients and appointments to avoid N+1 queries
+    if invoices:
+        patient_ids = list(set([inv["patient_id"] for inv in invoices]))
+        appointment_ids = list(set([inv["appointment_id"] for inv in invoices]))
+        
+        patients = await db.users.find(
+            {"user_id": {"$in": patient_ids}},
+            {"_id": 0, "user_id": 1, "name": 1, "email": 1, "phone": 1, "address": 1}
+        ).to_list(len(patient_ids))
+        
+        appointments = await db.appointments.find(
+            {"appointment_id": {"$in": appointment_ids}},
+            {"_id": 0}
+        ).to_list(len(appointment_ids))
+        
+        patient_map = {p["user_id"]: p for p in patients}
+        appointment_map = {a["appointment_id"]: a for a in appointments}
+        
+        # Enrich invoices with patient and appointment data
+        for inv in invoices:
+            inv["patient"] = patient_map.get(inv["patient_id"])
+            inv["appointment"] = appointment_map.get(inv["appointment_id"])
     
     return invoices
 
