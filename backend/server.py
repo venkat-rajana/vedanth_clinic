@@ -167,6 +167,27 @@ class SessionData(BaseModel):
     expires_at: datetime
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
+# User Activity Log Types
+ActivityType = Literal["login", "logout", "session_start", "session_end", "action", "page_view"]
+
+class UserActivityLog(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    log_id: str = Field(default_factory=lambda: f"activity_{uuid.uuid4().hex[:12]}")
+    user_id: str
+    user_email: Optional[str] = None
+    user_name: Optional[str] = None
+    user_role: Optional[str] = None
+    activity_type: str  # login, logout, action, page_view, etc.
+    action: Optional[str] = None  # CREATE_APPOINTMENT, VIEW_PATIENT, etc.
+    target_type: Optional[str] = None  # appointment, patient, invoice, etc.
+    target_id: Optional[str] = None
+    description: Optional[str] = None
+    ip_address: Optional[str] = None
+    user_agent: Optional[str] = None
+    session_id: Optional[str] = None
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    metadata: Optional[dict] = None
+
 # ============ HELPER FUNCTIONS ============
 def hash_password(password: str) -> str:
     """Hash password using SHA256 with salt"""
@@ -182,6 +203,54 @@ def verify_password(password: str, password_hash: str) -> bool:
         return hash_obj.hexdigest() == stored_hash
     except:
         return False
+
+async def log_user_activity(
+    user_id: str,
+    activity_type: str,
+    action: str = None,
+    target_type: str = None,
+    target_id: str = None,
+    description: str = None,
+    request: Request = None,
+    user_info: dict = None,
+    session_id: str = None,
+    metadata: dict = None
+):
+    """Log user activity to the database"""
+    try:
+        # Get user info if not provided
+        if not user_info:
+            user_doc = await db.users.find_one({"user_id": user_id}, {"_id": 0, "email": 1, "name": 1, "role": 1})
+            user_info = user_doc if user_doc else {}
+        
+        # Extract request info
+        ip_address = None
+        user_agent = None
+        if request:
+            ip_address = request.client.host if request.client else None
+            user_agent = request.headers.get("User-Agent", "")[:500]  # Limit length
+        
+        activity_log = {
+            "log_id": f"activity_{uuid.uuid4().hex[:12]}",
+            "user_id": user_id,
+            "user_email": user_info.get("email"),
+            "user_name": user_info.get("name"),
+            "user_role": user_info.get("role"),
+            "activity_type": activity_type,
+            "action": action,
+            "target_type": target_type,
+            "target_id": target_id,
+            "description": description,
+            "ip_address": ip_address,
+            "user_agent": user_agent,
+            "session_id": session_id,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "metadata": metadata
+        }
+        
+        await db.user_activity_logs.insert_one(activity_log)
+    except Exception as e:
+        logger.error(f"Failed to log user activity: {e}")
 
 async def get_current_user(request: Request) -> dict:
     """Extract and validate user from session token"""
@@ -321,6 +390,17 @@ async def exchange_session(request: Request, response: Response):
     # Get full user data
     user = await db.users.find_one({"user_id": user_id}, {"_id": 0})
     
+    # Log login activity
+    await log_user_activity(
+        user_id=user_id,
+        activity_type="login",
+        action="GOOGLE_LOGIN",
+        description=f"User logged in via Google OAuth",
+        request=request,
+        user_info=user,
+        session_id=session_token
+    )
+    
     return {"user": user, "message": "Session created"}
 
 @api_router.get("/auth/me")
@@ -334,14 +414,31 @@ async def get_me(request: Request):
 async def logout(request: Request, response: Response):
     """Logout user"""
     session_token = request.cookies.get("session_token")
+    user_id = None
+    
     if session_token:
+        # Get user_id before deleting session
+        session = await db.user_sessions.find_one({"session_token": session_token})
+        if session:
+            user_id = session.get("user_id")
         await db.user_sessions.delete_many({"session_token": session_token})
+    
+    # Log logout activity
+    if user_id:
+        await log_user_activity(
+            user_id=user_id,
+            activity_type="logout",
+            action="USER_LOGOUT",
+            description="User logged out",
+            request=request,
+            session_id=session_token
+        )
     
     response.delete_cookie(key="session_token", path="/")
     return {"message": "Logged out"}
 
 @api_router.post("/auth/login")
-async def email_password_login(login_data: EmailPasswordLogin, response: Response):
+async def email_password_login(login_data: EmailPasswordLogin, request: Request, response: Response):
     """Login with email and password"""
     # Find user by email
     user = await db.users.find_one({"email": login_data.email}, {"_id": 0})
@@ -388,6 +485,17 @@ async def email_password_login(login_data: EmailPasswordLogin, response: Respons
     
     # Return user without password_hash
     user_response = {k: v for k, v in user.items() if k != "password_hash"}
+    
+    # Log login activity
+    await log_user_activity(
+        user_id=user["user_id"],
+        activity_type="login",
+        action="EMAIL_PASSWORD_LOGIN",
+        description=f"User logged in via email/password",
+        request=request,
+        user_info=user,
+        session_id=session_token
+    )
     
     return {"user": user_response, "message": "Login successful"}
 
@@ -948,6 +1056,149 @@ async def get_dashboard_stats(request: Request):
             "total_appointments": my_appointments,
             "upcoming_appointments": upcoming
         }
+
+# ============ USER ACTIVITY LOGS ROUTES ============
+@api_router.get("/activity-logs")
+async def get_activity_logs(
+    request: Request,
+    role: Optional[str] = None,
+    activity_type: Optional[str] = None,
+    user_id: Optional[str] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    limit: int = 100,
+    skip: int = 0
+):
+    """Get user activity logs (admin only)"""
+    current_user = await get_current_user(request)
+    
+    if current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    query = {}
+    
+    # Filter by role
+    if role:
+        query["user_role"] = role
+    
+    # Filter by activity type
+    if activity_type:
+        query["activity_type"] = activity_type
+    
+    # Filter by specific user
+    if user_id:
+        query["user_id"] = user_id
+    
+    # Filter by date range
+    if start_date:
+        query["timestamp"] = {"$gte": start_date}
+    if end_date:
+        if "timestamp" in query:
+            query["timestamp"]["$lte"] = end_date
+        else:
+            query["timestamp"] = {"$lte": end_date}
+    
+    # Get total count
+    total = await db.user_activity_logs.count_documents(query)
+    
+    # Fetch logs with pagination
+    logs = await db.user_activity_logs.find(query, {"_id": 0}) \
+        .sort("timestamp", -1) \
+        .skip(skip) \
+        .limit(limit) \
+        .to_list(limit)
+    
+    return {
+        "logs": logs,
+        "total": total,
+        "limit": limit,
+        "skip": skip
+    }
+
+@api_router.get("/activity-logs/stats")
+async def get_activity_stats(request: Request):
+    """Get activity statistics (admin only)"""
+    current_user = await get_current_user(request)
+    
+    if current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Get stats by role
+    pipeline_role = [
+        {"$group": {
+            "_id": "$user_role",
+            "count": {"$sum": 1},
+            "latest": {"$max": "$timestamp"}
+        }}
+    ]
+    role_stats = await db.user_activity_logs.aggregate(pipeline_role).to_list(100)
+    
+    # Get stats by activity type
+    pipeline_type = [
+        {"$group": {
+            "_id": "$activity_type",
+            "count": {"$sum": 1}
+        }}
+    ]
+    type_stats = await db.user_activity_logs.aggregate(pipeline_type).to_list(100)
+    
+    # Get today's activity count
+    today = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
+    today_count = await db.user_activity_logs.count_documents({
+        "timestamp": {"$gte": today}
+    })
+    
+    # Get total count
+    total_count = await db.user_activity_logs.count_documents({})
+    
+    # Get unique active users today
+    pipeline_active = [
+        {"$match": {"timestamp": {"$gte": today}}},
+        {"$group": {"_id": "$user_id"}},
+        {"$count": "count"}
+    ]
+    active_result = await db.user_activity_logs.aggregate(pipeline_active).to_list(1)
+    active_users_today = active_result[0]["count"] if active_result else 0
+    
+    return {
+        "by_role": {item["_id"]: {"count": item["count"], "latest": item["latest"]} for item in role_stats if item["_id"]},
+        "by_type": {item["_id"]: item["count"] for item in type_stats if item["_id"]},
+        "today_count": today_count,
+        "total_count": total_count,
+        "active_users_today": active_users_today
+    }
+
+@api_router.get("/activity-logs/user/{target_user_id}")
+async def get_user_activity_logs(
+    target_user_id: str,
+    request: Request,
+    limit: int = 50,
+    skip: int = 0
+):
+    """Get activity logs for a specific user (admin only)"""
+    current_user = await get_current_user(request)
+    
+    if current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    query = {"user_id": target_user_id}
+    
+    # Get total count
+    total = await db.user_activity_logs.count_documents(query)
+    
+    # Fetch logs
+    logs = await db.user_activity_logs.find(query, {"_id": 0}) \
+        .sort("timestamp", -1) \
+        .skip(skip) \
+        .limit(limit) \
+        .to_list(limit)
+    
+    return {
+        "logs": logs,
+        "total": total,
+        "limit": limit,
+        "skip": skip
+    }
 
 # ============ SEED DATA ROUTE ============
 @api_router.post("/seed")

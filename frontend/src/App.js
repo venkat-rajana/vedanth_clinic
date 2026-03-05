@@ -18,6 +18,7 @@ import UserManagement from "./pages/UserManagement";
 import Patients from "./pages/Patients";
 import Schedule from "./pages/Schedule";
 import Settings from "./pages/Settings";
+import ActivityLogs from "./pages/ActivityLogs";
 import Unauthorized from "./pages/Unauthorized";
 import NotFound from "./pages/NotFound";
 
@@ -84,6 +85,12 @@ function AppRouter() {
       <Route path="/users" element={
         <ProtectedRoute allowedRoles={['admin']}>
           <UserManagement />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/activity-logs" element={
+        <ProtectedRoute allowedRoles={['admin']}>
+          <ActivityLogs />
         </ProtectedRoute>
       } />
       

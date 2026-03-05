@@ -24,6 +24,7 @@ const navItems = {
     { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { path: '/schedule', icon: Calendar, label: 'Schedule' },
     { path: '/users', icon: Users, label: 'User Management' },
+    { path: '/activity-logs', icon: ClipboardList, label: 'Activity Logs' },
     { path: '/appointments', icon: ClipboardList, label: 'All Appointments' },
     { path: '/invoices', icon: Receipt, label: 'Invoices' },
     { path: '/settings', icon: Settings, label: 'Settings' },
